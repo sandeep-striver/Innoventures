@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:blood_link/chat_bot_screen.dart';
 
+// This widget represents the Donor registration screen.
 class DonorScreen extends StatefulWidget {
   const DonorScreen({super.key});
 
@@ -11,12 +11,14 @@ class DonorScreen extends StatefulWidget {
 class _DonorScreenState extends State<DonorScreen> {
   String? _selectedBloodGroup;
   final TextEditingController _locationController = TextEditingController();
+  DateTime? _lastDonationDate;
+  final TextEditingController _ageController = TextEditingController();
+  final TextEditingController _weightController = TextEditingController();
 
-  final List<DateTime> _donationHistory = [
-    DateTime.now().subtract(const Duration(days: 10)),
-    DateTime.now().subtract(const Duration(days: 100)),
-    DateTime.now().subtract(const Duration(days: 300)),
-  ];
+  // New state variables for disease checks.
+  bool _hasHadMalaria = false;
+  bool _hasHadTyphoid = false;
+  bool _hasHadJaundice = false;
 
   final List<String> _bloodGroups = [
     'A+',
@@ -32,54 +34,117 @@ class _DonorScreenState extends State<DonorScreen> {
   @override
   void dispose() {
     _locationController.dispose();
+    _ageController.dispose();
+    _weightController.dispose();
     super.dispose();
   }
 
-  void _checkAvailability() {
+  // Method to show the date picker dialog.
+  Future<void> _selectDate(BuildContext context) async {
+    final DateTime? pickedDate = await showDatePicker(
+      context: context,
+      initialDate: _lastDonationDate ?? DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime.now(),
+      builder: (context, child) {
+        return Theme(
+          data: ThemeData.light().copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Color(0xFFE55B5B), // Header background color
+              onPrimary: Colors.white, // Header text color
+              surface: Colors.white, // Calendar background color
+              onSurface: Color(0xFF2C3E50), // Calendar text color
+            ),
+            dialogTheme: DialogThemeData(backgroundColor: Colors.white),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (pickedDate != null && pickedDate != _lastDonationDate) {
+      setState(() {
+        _lastDonationDate = pickedDate;
+      });
+    }
+  }
+
+  void _checkEligibility() {
+    // Check for basic required fields
     if (_selectedBloodGroup == null || _locationController.text.isEmpty) {
       _showAttractiveMessage(
         context,
-        'Please select a blood group and enter your location.',
+        'Please fill in all the required fields.',
         Icons.warning_amber,
         Colors.orange,
       );
       return;
     }
 
-    bool isEligible = true;
-    String eligibilityMessage = '';
-    IconData messageIcon = Icons.check_circle_outline;
-    Color messageColor = Colors.green;
+    // Check age and weight criteria
+    final int? age = int.tryParse(_ageController.text);
+    final int? weight = int.tryParse(_weightController.text);
 
-    DateTime threeMonthsAgo = DateTime.now().subtract(const Duration(days: 90));
+    if (age == null || age < 18 || age > 65) {
+      _showAttractiveMessage(
+        context,
+        'You must be between 18 and 65 years old to donate blood.',
+        Icons.info,
+        const Color(0xFFE55B5B),
+      );
+      return;
+    }
 
-    for (DateTime donationDate in _donationHistory) {
-      if (donationDate.isAfter(threeMonthsAgo)) {
-        isEligible = false;
-        eligibilityMessage =
-            'You are not eligible to donate. Your last donation was within the last 3 months.';
-        messageIcon = Icons.block;
-        messageColor = Colors.red;
-        break;
+    if (weight == null || weight < 50) {
+      _showAttractiveMessage(
+        context,
+        'You must weigh at least 50 kg to donate blood.',
+        Icons.info,
+        const Color(0xFFE55B5B),
+      );
+      return;
+    }
+
+    // Check last donation date
+    if (_lastDonationDate != null) {
+      final DateTime threeMonthsAgo = DateTime.now().subtract(
+        const Duration(days: 90),
+      );
+      if (_lastDonationDate!.isAfter(threeMonthsAgo)) {
+        _showAttractiveMessage(
+          context,
+          'You are not eligible to donate. Your last donation was within the last 3 months.',
+          Icons.block,
+          Colors.red,
+        );
+        return;
       }
     }
 
-    if (isEligible) {
-      print('User is eligible. Navigating to ChatBotScreen.');
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const ChatBotScreen()),
-      );
-    } else {
+    // New: Check for specific diseases in the past year.
+    final DateTime oneYearAgo = DateTime.now().subtract(
+      const Duration(days: 365),
+    );
+    if (_hasHadMalaria || _hasHadTyphoid || _hasHadJaundice) {
       _showAttractiveMessage(
         context,
-        eligibilityMessage,
-        messageIcon,
-        messageColor,
+        'You are not eligible to donate due to recent health issues. Please consult with a doctor or blood bank representative.',
+        Icons.sick_outlined,
+        Colors.red,
       );
+      return;
     }
+
+    // If all checks pass, show a success message.
+    _showAttractiveMessage(
+      context,
+      'You are eligible to donate! Thank you for your interest.',
+      Icons.favorite,
+      Colors.green,
+    );
   }
 
+  // Method to show attractive dialog messages.
   void _showAttractiveMessage(
     BuildContext context,
     String message,
@@ -127,9 +192,7 @@ class _DonorScreenState extends State<DonorScreen> {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    },
+                    onPressed: () => Navigator.of(context).pop(),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: color,
                       padding: const EdgeInsets.symmetric(vertical: 15),
@@ -168,15 +231,15 @@ class _DonorScreenState extends State<DonorScreen> {
         ),
         child: CustomScrollView(
           slivers: [
-            SliverAppBar(
+            const SliverAppBar(
               backgroundColor: Colors.transparent,
               elevation: 0,
               expandedHeight: 120.0,
               flexibleSpace: FlexibleSpaceBar(
                 centerTitle: true,
-                titlePadding: const EdgeInsets.only(bottom: 20.0),
-                title: const Text(
-                  'Enter Details',
+                titlePadding: EdgeInsets.only(bottom: 20.0),
+                title: Text(
+                  'Donate Blood',
                   style: TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
@@ -189,7 +252,6 @@ class _DonorScreenState extends State<DonorScreen> {
               padding: const EdgeInsets.all(24.0),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
-                  const SizedBox(height: 20),
                   _buildBloodGroupDropdown(),
                   const SizedBox(height: 20),
                   _buildInputField(
@@ -199,21 +261,31 @@ class _DonorScreenState extends State<DonorScreen> {
                     icon: Icons.location_on_outlined,
                   ),
                   const SizedBox(height: 20),
-                  _buildDonationHistorySection(),
-                  const SizedBox(height: 40),
-                  const Text(
-                    'Available for donation?',
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF2C3E50),
-                    ),
+                  _buildInputField(
+                    controller: _ageController,
+                    label: 'Age',
+                    hint: 'Enter your age',
+                    keyboardType: TextInputType.number,
+                    icon: Icons.person_outline,
                   ),
                   const SizedBox(height: 20),
+                  _buildInputField(
+                    controller: _weightController,
+                    label: 'Weight (in kg)',
+                    hint: 'Enter your weight',
+                    keyboardType: TextInputType.number,
+                    icon: Icons.monitor_weight_outlined,
+                  ),
+                  const SizedBox(height: 20),
+                  _buildLastDonationDateField(),
+                  const SizedBox(height: 20),
+                  // New health criteria checkboxes
+                  _buildHealthCheckboxes(),
+                  const SizedBox(height: 40),
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: _checkAvailability,
+                      onPressed: _checkEligibility,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF4CAF50),
                         padding: const EdgeInsets.symmetric(vertical: 18),
@@ -233,7 +305,7 @@ class _DonorScreenState extends State<DonorScreen> {
                           ),
                           SizedBox(width: 10),
                           Text(
-                            'CHECK AVAILABILITY',
+                            'CHECK ELIGIBILITY',
                             style: TextStyle(
                               fontSize: 20,
                               fontWeight: FontWeight.bold,
@@ -250,6 +322,146 @@ class _DonorScreenState extends State<DonorScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  // New widget to build the health criteria checkboxes.
+  Widget _buildHealthCheckboxes() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Health Questionnaire',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF2C3E50),
+          ),
+        ),
+        const SizedBox(height: 10),
+        _buildCheckboxTile(
+          'Have you had malaria in the last year?',
+          _hasHadMalaria,
+          (bool? newValue) {
+            setState(() {
+              _hasHadMalaria = newValue ?? false;
+            });
+          },
+        ),
+        _buildCheckboxTile(
+          'Have you had typhoid in the last year?',
+          _hasHadTyphoid,
+          (bool? newValue) {
+            setState(() {
+              _hasHadTyphoid = newValue ?? false;
+            });
+          },
+        ),
+        _buildCheckboxTile(
+          'Have you had jaundice in the last year?',
+          _hasHadJaundice,
+          (bool? newValue) {
+            setState(() {
+              _hasHadJaundice = newValue ?? false;
+            });
+          },
+        ),
+      ],
+    );
+  }
+
+  // Reusable widget for a single checkbox tile.
+  Widget _buildCheckboxTile(
+    String title,
+    bool value,
+    ValueChanged<bool?> onChanged,
+  ) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 5),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 2,
+            blurRadius: 5,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: CheckboxListTile(
+        title: Text(
+          title,
+          style: const TextStyle(fontSize: 16, color: Color(0xFF2C3E50)),
+        ),
+        value: value,
+        onChanged: onChanged,
+        activeColor: const Color(0xFFE55B5B),
+      ),
+    );
+  }
+
+  // Existing helper methods...
+
+  Widget _buildLastDonationDateField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Last Donation Date',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF2C3E50),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(15),
+            border: Border.all(color: Colors.grey.shade200),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.1),
+                spreadRadius: 2,
+                blurRadius: 5,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: InkWell(
+            onTap: () => _selectDate(context),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.calendar_today,
+                  color: Color(0xFFE55B5B),
+                  size: 24,
+                ),
+                const SizedBox(width: 15),
+                Expanded(
+                  child: Text(
+                    _lastDonationDate != null
+                        ? "${_lastDonationDate!.toLocal().day}/${_lastDonationDate!.toLocal().month}/${_lastDonationDate!.toLocal().year}"
+                        : 'Select date (optional)',
+                    style: TextStyle(
+                      fontSize: 18,
+                      color:
+                          _lastDonationDate != null
+                              ? const Color(0xFF2C3E50)
+                              : Colors.grey,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -274,7 +486,7 @@ class _DonorScreenState extends State<DonorScreen> {
         ),
         const SizedBox(height: 8),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
+          padding: const EdgeInsets.symmetric(horizontal: 15),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(15),
@@ -296,10 +508,10 @@ class _DonorScreenState extends State<DonorScreen> {
               hintText: hint,
               border: InputBorder.none,
               isDense: true,
-              contentPadding: EdgeInsets.zero,
+              contentPadding: const EdgeInsets.symmetric(vertical: 18),
               prefixIcon:
                   icon != null
-                      ? Icon(icon, color: const Color(0xFFE55B5B), size: 24)
+                      ? Icon(icon, color: const Color(0xFFE55B5B))
                       : null,
               prefixIconConstraints:
                   icon != null ? const BoxConstraints(minWidth: 40) : null,
@@ -369,92 +581,6 @@ class _DonorScreenState extends State<DonorScreen> {
             ),
           ),
         ),
-      ],
-    );
-  }
-
-  Widget _buildDonationHistorySection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Donation History',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF2C3E50),
-          ),
-        ),
-        const SizedBox(height: 8),
-        _donationHistory.isEmpty
-            ? Container(
-              padding: const EdgeInsets.all(15),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(15),
-                border: Border.all(color: Colors.grey.shade200),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.1),
-                    spreadRadius: 2,
-                    blurRadius: 5,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
-              ),
-              child: const Row(
-                children: [
-                  Icon(Icons.info_outline, color: Colors.blueGrey, size: 24),
-                  SizedBox(width: 10),
-                  Text(
-                    'No donation history available.',
-                    style: TextStyle(fontSize: 16, color: Colors.blueGrey),
-                  ),
-                ],
-              ),
-            )
-            : ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: _donationHistory.length,
-              itemBuilder: (context, index) {
-                final date = _donationHistory[index];
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 10),
-                  padding: const EdgeInsets.all(15),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(15),
-                    border: Border.all(color: Colors.grey.shade200),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.1),
-                        spreadRadius: 2,
-                        blurRadius: 5,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.history,
-                        color: Color(0xFFE55B5B),
-                        size: 24,
-                      ),
-                      const SizedBox(width: 10),
-                      Text(
-                        'Donated on: ${date.toLocal().day}/${date.toLocal().month}/${date.toLocal().year}',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: Color(0xFF2C3E50),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
       ],
     );
   }

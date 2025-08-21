@@ -324,14 +324,18 @@ class _RecipientScreenState extends State<RecipientScreen> {
               if (isError && text.isNotEmpty) {
                 setState(() {
                   // Clear error state when user starts typing
-                  if (controller == _patientNameController)
+                  if (controller == _patientNameController) {
                     _isPatientNameEmpty = false;
-                  if (controller == _quantityController)
+                  }
+                  if (controller == _quantityController) {
                     _isQuantityEmpty = false;
-                  if (controller == _hospitalController)
+                  }
+                  if (controller == _hospitalController) {
                     _isHospitalEmpty = false;
-                  if (controller == _medicalReasonController)
+                  }
+                  if (controller == _medicalReasonController) {
                     _isMedicalReasonEmpty = false;
+                  }
                 });
               }
             },
