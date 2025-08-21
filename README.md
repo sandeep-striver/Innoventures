@@ -1,16 +1,29 @@
-# blood_link
+# Innoventures – Blood Link  
+_Connecting lives through every drop_
 
-A new Flutter project.
+##  Overview
+**Innoventures – Blood Link** is a Flutter-based mobile application aimed at facilitating connections between blood donors and seekers. Built with cross-platform support (Android, iOS, Web, Windows, macOS, Linux), this project serves as a foundational template for a healthcare initiative to streamline blood donation logistics.
 
-## Getting Started
+##  Features
+- Cross-platform compatibility: **Android · iOS · Web · Windows · macOS · Linux**
+- Modular Flutter architecture for scalable development
+- Starter UI structure and navigation boilerplate
+- Ready for integration with backend APIs, user authentication, and map/location services
 
-This project is a starting point for a Flutter application.
+##  Getting Started
 
-A few resources to get you started if this is your first Flutter project:
+### Prerequisites
+- [Flutter SDK](https://docs.flutter.dev/get-started/install) (Flutter 3.x or newer recommended)  
+- Compatible IDE (VS Code, Android Studio, IntelliJ IDEA)
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+### Installation Steps
+1. **Clone the repository**  
+   ```bash
+   git clone https://github.com/robinsaini2284/Innoventures.git
+   cd Innoventures
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+flutter run -d windows
+# or
+flutter run -d macos
+# or
+flutter run -d linux
