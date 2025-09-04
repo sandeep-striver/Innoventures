@@ -122,18 +122,23 @@ class _DonorScreenState extends State<DonorScreen> {
     }
 
     // New: Check for specific diseases in the past year.
-    final DateTime oneYearAgo = DateTime.now().subtract(
-      const Duration(days: 365),
-    );
-    if (_hasHadMalaria || _hasHadTyphoid || _hasHadJaundice) {
-      _showAttractiveMessage(
-        context,
-        'You are not eligible to donate due to recent health issues. Please consult with a doctor or blood bank representative.',
-        Icons.sick_outlined,
-        Colors.red,
-      );
-      return;
-    }
+    final DateTime? malariaDate = _hasHadMalaria ? DateTime.now() : null;
+    final DateTime? typhoidDate = _hasHadTyphoid ? DateTime.now() : null;
+    final DateTime? jaundiceDate = _hasHadJaundice ? DateTime.now() : null;
+final DateTime oneYearAgo = DateTime.now().subtract(
+  const Duration(days: 365),
+);
+if ((_hasHadMalaria && malariaDate != null && malariaDate.isAfter(oneYearAgo)) ||
+    (_hasHadTyphoid && typhoidDate != null && typhoidDate.isAfter(oneYearAgo)) ||
+    (_hasHadJaundice && jaundiceDate != null && jaundiceDate.isAfter(oneYearAgo))) {
+  _showAttractiveMessage(
+    context,
+    'You are not eligible to donate due to recent health issues. Please consult with a doctor or blood bank representative.',
+    Icons.sick_outlined,
+    Colors.red,
+  );
+  return;
+}
 
     // If all checks pass, show a success message.
     _showAttractiveMessage(

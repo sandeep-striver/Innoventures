@@ -89,7 +89,7 @@ class _UBloodHomePageState extends State<UBloodHomePage> {
 
 // A new widget to hold the original home page body content.
 class _HomePageBody extends StatelessWidget {
-  const _HomePageBody({super.key});
+  const _HomePageBody();
 
   @override
   Widget build(BuildContext context) {

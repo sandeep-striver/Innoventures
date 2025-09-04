@@ -4,7 +4,7 @@ class PostBloodRequestScreen extends StatefulWidget {
   const PostBloodRequestScreen({super.key});
 
   @override
-  _PostBloodRequestScreenState createState() => _PostBloodRequestScreenState();
+  State<PostBloodRequestScreen> createState() => _PostBloodRequestScreenState();
 }
 
 class _PostBloodRequestScreenState extends State<PostBloodRequestScreen> {
@@ -28,6 +28,8 @@ class _PostBloodRequestScreenState extends State<PostBloodRequestScreen> {
   ];
   final List<String> urgencies = ['Emergency', 'Urgent', 'Standard'];
 
+  /// Handles form submission by validating the form, saving the input data,
+  /// showing a success message, and then popping the screen.
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
