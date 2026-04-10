@@ -1,4 +1,4 @@
-# Innoventures – Blood Link  _Connecting lives through every drop_
+# Blood Link  -Connecting lives through every drop_
 
 ##  Overview
 **Innoventures – Blood Link** is a Flutter-based mobile application aimed at facilitating connections between blood donors and seekers. Built with cross-platform support (Android, iOS, Web, Windows, macOS, Linux), this project serves as a foundational template for a healthcare initiative to streamline blood donation logistics.
